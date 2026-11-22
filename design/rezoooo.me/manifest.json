@@ -1,0 +1,99 @@
+{
+  "manifestVersion": 3,
+  "name": "rezoooo.me",
+  "namespace": "Rezoooo",
+  "files": [
+    "assets/Logos/README.md",
+    "components/Wordmark/README.md",
+    "tokens.css"
+  ],
+  "libraries": [],
+  "components": [
+    {
+      "name": "Wordmark",
+      "group": "Brand",
+      "summary": "The rezoooo.me wordmark set: full, compact (16px sidebar and mobile) and the gauge-o app icon/favicon."
+    }
+  ],
+  "assetGroups": [
+    {
+      "name": "Logos",
+      "tile": "l",
+      "order": [
+        "rezoooo-wordmark.svg",
+        "rezoooo-wordmark-compact.svg",
+        "rezoooo-icon.svg",
+        "rezoooo-favicon.svg",
+        "rezoooo-wordmark-alt-gauge.svg",
+        "rezoooo-icon-alt-oo.svg"
+      ],
+      "files": [
+        {
+          "path": "assets/Logos/rezoooo-wordmark.svg",
+          "id": "24afa2fdc17760f4fe6bb8208f0bc28c"
+        },
+        {
+          "path": "assets/Logos/rezoooo-wordmark-compact.svg",
+          "id": "0487d854091ecb118a04ba94bcbef44a"
+        },
+        {
+          "path": "assets/Logos/rezoooo-icon.svg",
+          "id": "fad511d2d619340a80e55b69e7880181"
+        },
+        {
+          "path": "assets/Logos/rezoooo-favicon.svg",
+          "id": "361e4fa96f04a0f7449faf2340ed8f9a"
+        },
+        {
+          "path": "assets/Logos/rezoooo-wordmark-alt-gauge.svg",
+          "id": "469e7c11246b48d9e05fb7323e663f24"
+        },
+        {
+          "path": "assets/Logos/rezoooo-icon-alt-oo.svg",
+          "id": "82d7c3379a3c3c12748d7117bec4ed82"
+        }
+      ]
+    }
+  ],
+  "storage": {
+    "files": {
+      "assets/Logos/rezoooo-favicon.svg": {
+        "store": "blob",
+        "id": "361e4fa96f04a0f7449faf2340ed8f9a",
+        "bytes": 403,
+        "type": "image/svg+xml"
+      },
+      "assets/Logos/rezoooo-icon-alt-oo.svg": {
+        "store": "blob",
+        "id": "82d7c3379a3c3c12748d7117bec4ed82",
+        "bytes": 376,
+        "type": "image/svg+xml"
+      },
+      "assets/Logos/rezoooo-icon.svg": {
+        "store": "blob",
+        "id": "fad511d2d619340a80e55b69e7880181",
+        "bytes": 403,
+        "type": "image/svg+xml"
+      },
+      "assets/Logos/rezoooo-wordmark-alt-gauge.svg": {
+        "store": "blob",
+        "id": "469e7c11246b48d9e05fb7323e663f24",
+        "bytes": 3017,
+        "type": "image/svg+xml"
+      },
+      "assets/Logos/rezoooo-wordmark-compact.svg": {
+        "store": "blob",
+        "id": "0487d854091ecb118a04ba94bcbef44a",
+        "bytes": 4306,
+        "type": "image/svg+xml"
+      },
+      "assets/Logos/rezoooo-wordmark.svg": {
+        "store": "blob",
+        "id": "24afa2fdc17760f4fe6bb8208f0bc28c",
+        "bytes": 4305,
+        "type": "image/svg+xml"
+      }
+    },
+    "blobBytesUsed": 12810
+  }
+}

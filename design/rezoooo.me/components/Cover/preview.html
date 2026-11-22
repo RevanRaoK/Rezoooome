@@ -1,0 +1,32 @@
+<!-- @dsCard height=288 -->
+<!doctype html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0}
+html,body{width:960px;height:288px;overflow:hidden}
+body{background:var(--canvas);font-family:var(--font-sans);position:relative}
+.art{position:absolute;left:480px;top:0;width:480px;height:288px}
+.ink{fill:var(--ink)} .brand{fill:var(--orange-500)} .tint{fill:var(--orange-100)}
+.r-lg{rx:var(--radius-lg)} .r-xl{rx:var(--radius-xl)}
+.ring-ink{fill:none;stroke:var(--ink);stroke-width:10px} .ring-light{fill:none;stroke:var(--surface);stroke-width:10px}
+.txt{position:absolute;left:40px;bottom:40px;max-width:440px}
+.name{font-size:72px;line-height:.95;font-weight:800;letter-spacing:-0.02em;color:var(--ink)}
+.tag{margin-top:12px;font-size:14px;line-height:20px;font-weight:500;color:var(--ink-muted)}
+</style></head><body>
+<svg class="art" viewBox="0 0 480 288" aria-hidden="true">
+<!--
+blocks: ink 152×232 (bleeds top, radius-lg) · orange-500 264×152 (radius-xl) · orange-100 264×104 (bleeds bottom, radius-lg)
+arrangement: one tall ink slab with two stacked satellites, gaps = space-4 (16px)
+pattern: literal motif, four rings from radius-full = the "oooo"; 3 ink + 1 surface ring on the orange block, inverting the wordmark's odd-one-out o
+scales: space-4 gaps, space-6 ring radius (24), space-3 ring gap (12), radius-lg 16, radius-xl 24
+-->
+<rect class="ink r-lg" x="24" y="-24" width="152" height="232"/>
+<rect class="brand r-xl" x="192" y="40" width="264" height="152"/>
+<rect class="tint r-lg" x="192" y="208" width="264" height="104"/>
+<circle class="ring-ink" cx="234" cy="116" r="19"/>
+<circle class="ring-ink" cx="294" cy="116" r="19"/>
+<circle class="ring-ink" cx="354" cy="116" r="19"/>
+<circle class="ring-light" cx="414" cy="116" r="19"/>
+</svg>
+<div class="txt"><div class="name">rezoooo.me</div><div class="tag">See how well your resume matches the job.</div></div>
+</body></html>
