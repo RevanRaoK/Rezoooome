@@ -1,0 +1,17 @@
+python-dotenv
+pydantic>=2.0
+openai
+PyJWT[crypto]
+fastapi
+httpx
+asyncpg
+boto3
+arq
+redis
+pdfplumber
+python-docx
+pypdfium2
+pytesseract
+pillow
+fpdf2
+sentence-transformers
