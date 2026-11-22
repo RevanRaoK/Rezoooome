@@ -1,0 +1,47 @@
+# Environment files
+.env
+.env.local
+.env.*.local
+*.env
+!.env.example
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+web/next-env.d.ts
+*.tsbuildinfo
+
+# Python
+.venv/
+venv/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Docs archive (kept local only)
+.design-docs/_archive/
+
+# Spike outputs & generated sample files
+spikes/samples/sample_*
+spikes/samples/*.pdf
+spikes/samples/*.docx
+spikes/samples/*.txt
+spikes/*.log
+spikes/*.out
+spikes/output/
+
+# Model caches
+.cache/
+.huggingface/
+models_cache/
+*.onnx
+*.safetensors
+
+# OS artifacts
+.DS_Store
+Thumbs.db
