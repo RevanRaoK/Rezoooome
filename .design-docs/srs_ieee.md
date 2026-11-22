@@ -38,7 +38,7 @@ A full-stack web app: Next.js frontend, FastAPI backend, ARQ workers on Redis, N
 - Maintainers: monitor queue depth, failures and costs.
 
 ### 2.4 Operating Environment
-Modern desktop and mobile browsers (planned production origin `https://rezoooome.vercel.app`, local development `http://localhost:3000`; origins configured via environment variables). Python 3.12 backend. Redis broker (Docker locally on host port `6380`, Upstash in production). Tesseract installed on OCR workers (on Windows dev, configure `TESSERACT_CMD` if `tesseract.exe` is not on `PATH`; default OCR render scale 200 DPI).
+Modern desktop and mobile browsers (planned production origin `https://rezoooo-me.vercel.app`, local development `http://localhost:3000`; origins configured via environment variables). Python 3.12 backend. Redis broker (Docker locally on host port `6380`, Upstash in production). Tesseract installed on OCR workers (on Windows dev, configure `TESSERACT_CMD` if `tesseract.exe` is not on `PATH`; default OCR render scale 200 DPI).
 
 ### 2.5 Constraints
 - Heavy work shall not run inside request handlers.

@@ -1,8 +1,8 @@
-# HANDOFF.md — Phase 0 / 0b to Phase 1
+# HANDOFF.md — Phase 1 to Phase 2
 
 **Date:** 2026-11-22  
-**Next Session Goal:** Phase 1 — Replace the `/web` placeholder, scaffold `/api` and root `docker-compose.yml` (Redis on `127.0.0.1:6380:6379`), apply `/design` tokens, and wire Neon Auth (`@neon/auth` + FastAPI `EdDSA` JWKS + E2E GitHub OAuth verification). Do **not** build Phase 2+ ingestion/LLM pipelines yet.  
-**Vercel project:** create with Root Directory = `web`, Framework = Next.js, project name `rezoooome`, no environment variables yet; production URL `https://rezoooome.vercel.app`.
+**Next Session Goal:** Phase 2 — Backend core: Postgres schema & Alembic migrations (`analyses`, `usage_daily`), `POST /analyses`, `GET /analyses/{id}`, `DELETE /me` (with S3 file deletion + SQL `neon_auth."user"` cascade + rejected deleted-user JWT check), atomic Redis + Postgres quotas, ARQ `default` & `ocr` workers (`docker compose up -d redis`), PDF/DOCX/TXT + Tesseract OCR extractors, and Storage adapters (`Neon Object Storage` / `LocalDiskStorage`).  
+**Vercel project:** Root Directory = `web`, Framework = Next.js, Node.js Version = `26.x`, production URL `https://rezoooo-me.vercel.app` (`/web` builds cleanly with zero `.env` secrets; `/api` hosting undecided until Phase 5).
 
 ---
 
@@ -10,7 +10,12 @@
 
 ### Host, Toolchain & Placeholder Versions (Windows 11, PowerShell 5.1)
 - **Python:** `3.12.10` (`py -3.12`). `uv` is **not** installed.
-- **Node & `/web` Placeholder (verified `npm install` + `typecheck` + `build`):** `Node v25.8.2`, `Next.js 16.4.6` (Turbopack), `React 19.3.1`, `react-dom 19.3.1`, `TypeScript 5.9.3`, `@types/react 19.3.0`, `@types/node 26.6.6`. `pnpm` is **not** installed.
+- **Node, `fnm` & `/web` Phase 1 (verified):** `fnm v1.39.0` (`Schniz.fnm` portable) pinning `Node v26.13.1` LTS (`npm 11.20.0`) via `/web/.nvmrc` (`global` `C:\Program Files\nodejs\node.exe` untouched at `v25.8.2`); `/web/package.json` (`engines.node = "26.x"`) with `Next.js 16.4.6`, `React 19.3.1`, `TypeScript 5.9.3`, `tailwindcss 4.3.5`, `@neon/auth 0.8.2`, `lucide-react 1.77.0`, `eslint 9.39.5`, `eslint-config-next 16.4.6`, `@playwright/test 1.65.1`, `@axe-core/playwright 4.14.0` (dev-only). `pnpm` is **not** installed.
+- **Phase 1 Build, Unit Tests & Playwright E2E (verified):**
+  - `/api`: `pytest` `9/9` passing (valid `EdDSA` JWT `200`, minor `+5s` `iat` clock skew `200`, missing/expired/tampered/wrong-key/wrong-alg `401`, `/health` `200`, CORS preflight); `ruff check .` passed.
+  - `/web`: `npm run lint`, `npm run typecheck`, runtime `npm run build`, and clean zero-secret `npm run build` (`REZOOOOME_SKIP_PARENT_ENV=1`) all exited `0`; static bundle leak scan on `web/.next/static/` found `0` `.env` secrets.
+  - Playwright E2E (`4/4` passing, Chromium desktop & mobile against live `next start :3000` + `uvicorn :8000` + Neon Auth): `0` axe-core violations on `/` and `/sign-in`; `0` horizontal overflow at `360px`–`1440px`; `0` broken links; desktop (`1440x900`) and mobile (`390x844`) sign-up -> `/dashboard` -> FastAPI `GET /me` `EdDSA` verification -> reload persistence -> `/settings` real provider list (`/api/auth/list-accounts`) -> sign-out -> protected redirect (`/dashboard` -> `/sign-in`) -> sign-in all passed; synthetic `phase1-pw-%` test users deleted (`0` remaining).
+  - Live `POST {NEON_AUTH_BASE_URL}/request-password-reset` probe returned `HTTP 200`. `docker compose config -q` passed.
 - **Docker:** `29.6.2`, Docker Compose `v5.3.1`.
 - **Tesseract:** `tesseract v5.5.0.20241111` (`leptonica-1.85.0`, `eng.traineddata` & `osd.traineddata`) at `C:\Program Files\Tesseract-OCR\tesseract.exe` (**not** on `PATH`).
 - **Spike Venv Key Packages (`spikes\.venv`):** `torch 2.15.0+cpu`, `sentence-transformers 6.3.0`, `openai 3.57.0`, `pydantic 2.14.4`, `fastapi 0.165.0`, `PyJWT 2.15.1`, `cryptography 50.0.2`, `httpx 0.28.1`, `asyncpg 0.32.0`, `boto3 1.44.9`, `arq 0.28.0`, `redis 5.3.1`, `pdfplumber 0.11.11`, `python-docx 1.2.0`, `pypdfium2 5.15.2`, `pytesseract 0.3.13`, `pillow 13.0.0`, `fpdf2 2.9.0`.
@@ -41,24 +46,42 @@
 ---
 
 ## 2. Unverified / Unconfirmed Items
-- **GitHub interactive sign-in end-to-end:** Configured and server-side initiation verified (`HTTP 200 -> 302 github.com`), **not yet verified end to end** (Phase 1 task). Multi-callback routing across two separate Neon branches on one GitHub OAuth App is also untested E2E.
+- **Google & GitHub interactive OAuth callback roundtrip:** Browser Playwright verified `POST /api/auth/sign-in/social` HTTP `200` and browser navigation to `accounts.google.com` & `github.com`, but interactive third-party credential entry + callback landing on `/dashboard` remains **manual verification required** (see checklist below). Multi-callback routing across two separate Neon branches on one GitHub OAuth App is also untested E2E.
+- **Forgot password email inbox delivery & Neon shared SMTP:** Live API call to `/api/auth/request-password-reset` returns `HTTP 200` and `/reset-password` calls `/api/auth/reset-password`, but real email delivery uses Neon's rate-limited shared dev SMTP (`auth@mail.myneon.app`); configure custom SMTP before public launch and verify email delivery interactively.
+- **Omitted legal/footer pages:** `/#privacy`, `/#terms`, `/#contact` on `/` footer and `#terms`/`#privacy` on `/sign-in` were omitted in Phase 1 so there are zero dead placeholder links; add real legal/contact pages before launch.
 - **Neon shared Google credentials details:** Exact numeric rate limits / user caps are unpublished (`unconfirmed`), and whether Neon hard-blocks shared Google credentials on production domains at runtime is `unconfirmed` (production launch still requires your own client per Neon docs).
 - **Neon Console UI menu label & localhost Domains rule:** `setup-oauth.md` says **Settings → Auth** while `production-checklist.md` says **Settings → Better Auth** (exact current UI wording unconfirmed in live browser); unconfirmed whether manually adding `http://localhost:3000` in Domains works once **Allow Localhost** is disabled, and unconfirmed whether any custom domain/CNAME option exists for `NEON_AUTH_BASE_URL` itself.
 - **OpenRouter 429 & full Qwen 20-call `4096` run:** Live HTTP `429` rate-limit triggering was not induced (`unverified live`); full 20-call Qwen re-run at `max_tokens=4096, reasoning=False` remains `unverified` (3/3 long/deny probes passed).
-- **App commands in `AGENTS.md`:** `/web` `npm run dev` / `lint` / Playwright, `/api` (`uvicorn`, `pytest`, `ruff`, `.workers.*`), and root `docker compose up -d redis` remain **`(unverified)`** until Phase 1+.
+- **Deferred runtime commands:** `docker compose up -d redis` runtime, `arq.exe app.workers.*`, and `/web` `npm run dev` (E2E tested via `next start`) remain unverified until Phase 2.
 
 ---
 
 ## 3. Auth Tasks & Phase Notes
 
-### Enable and Verify GitHub Sign-in (Phase 1 Task)
-- **Current status:** GitHub OAuth credentials are configured in Neon Console for `https://rezoooome.vercel.app`, and `POST /sign-in/social` now redirects (`302`) to `github.com` (`not yet verified end to end`).
+### Environment Variables Required (Phase 1 Local `.env` & Vercel `/web`)
+- **Add to local root `.env` (never commit):**
+  - `NEON_AUTH_COOKIE_SECRET` — generate 32+ random characters locally (e.g., Python `secrets.token_urlsafe(32)` or OpenSSL). Required at `/web` runtime for `@neon/auth` cookie signing.
+  - `NEXT_PUBLIC_API_URL` — `http://127.0.0.1:8000` (or `http://localhost:8000`) locally; deployed FastAPI URL in production.
+  - `CORS_ALLOWED_ORIGINS` — `http://localhost:3000` locally; comma-separated browser origin(s) in production (no trailing slash).
+- **Vercel `/web` Project Settings & Env Var Names:**
+  - Set **Project Settings → General → Node.js Version** to **`26.x`** (matches `/web/.nvmrc` `26.13.1` and `package.json` `"engines": { "node": "26.x" }`).
+  - Set runtime/build env vars in Vercel (no secrets required during clean `next build`): `NEON_AUTH_BASE_URL`, `NEON_AUTH_COOKIE_SECRET`, and `NEXT_PUBLIC_API_URL` (once `/api` host exists in Phase 5).
+
+### Manual E2E OAuth Verification Checklist (Google & GitHub)
+- Automated Playwright verified client OAuth initiation (`POST /api/auth/sign-in/social` -> `200` + redirect to `accounts.google.com` / `github.com`). To manually verify full interactive login:
+  1. Start `/api` (`uvicorn app.main:app --host 127.0.0.1 --port 8000`) and `/web` (`fnm use; npm run dev` at `http://localhost:3000`).
+  2. Visit `http://localhost:3000/sign-in`, click **Continue with Google**, sign in on Google's consent screen, verify callback lands on `/dashboard`, `API authentication check` shows `Verified via FastAPI JWKS` + `user_id`, and `/settings` lists `Google` as `Connected`.
+  3. Repeat on an incognito window with **Continue with GitHub** (ensure **Allow Localhost** is on in Neon Auth Configuration), verify callback lands on `/dashboard`, `/me` succeeds, and `/settings` lists `GitHub` as `Connected`.
+  4. Re-test after production deployment on `https://rezoooo-me.vercel.app` (making sure `https://rezoooo-me.vercel.app` is added under **Console → Auth → Configuration → Domains**).
+
+### Enable and Verify GitHub Sign-in (Reference Steps)
+- **Current status:** GitHub OAuth credentials are configured in Neon Console for `https://rezoooo-me.vercel.app`, and `POST /sign-in/social` now redirects (`302`) to `github.com` (`not yet verified end to end`).
 - **Phase 1 verification steps (and setup steps if adding another Neon branch later):**
   1. In **Neon Console**, open your project -> select the target branch -> go to **Settings → Auth** (or **Settings → Better Auth**, exact menu wording unconfirmed) -> **OAuth providers** -> **GitHub**.
   2. Copy the branch callback URL shown in Neon Console: `{NEON_AUTH_BASE_URL}/callback/github` (stored in Neon Console per branch, NOT in `.env`).
-  3. Confirm `https://rezoooome.vercel.app` is added under **Console → Auth → Configuration → Domains** (no trailing slash).
-  4. In `/web` Phase 1 (`@neon/auth`), sign in via GitHub end to end on `http://localhost:3000` (with **Allow Localhost** enabled) and after deployment on `https://rezoooome.vercel.app`; confirm `neon_auth.user`, `neon_auth.account`, and FastAPI JWKS `/me` succeed.
-- **One GitHub OAuth App vs two (`localhost` + prod):** Official GitHub OAuth Apps docs confirm **up to 10 Authorization callback URLs** are supported per OAuth app (via **Add callback URL**), AND Neon Auth's callback URL is `{NEON_AUTH_BASE_URL}/callback/github` (the Neon branch auth host, not the app domain). Therefore, while local dev (`http://localhost:3000`) and production (`https://rezoooome.vercel.app`) share the **same Neon branch**, one GitHub OAuth App works for both and needs no client ID/secret in `.env`. If you create a **separate Neon dev branch** later (`DEV_NEON_AUTH_BASE_URL`), add its `{DEV_NEON_AUTH_BASE_URL}/callback/github` as a 2nd callback URL on the same GitHub app (untested across branches) or register a 2nd GitHub OAuth app and enter its Client ID/Secret on that Neon dev branch in Neon Console.
+  3. Confirm `https://rezoooo-me.vercel.app` is added under **Console → Auth → Configuration → Domains** (no trailing slash).
+  4. In `/web` Phase 1 (`@neon/auth`), sign in via GitHub end to end on `http://localhost:3000` (with **Allow Localhost** enabled) and after deployment on `https://rezoooo-me.vercel.app`; confirm `neon_auth.user`, `neon_auth.account`, and FastAPI JWKS `/me` succeed.
+- **One GitHub OAuth App vs two (`localhost` + prod):** Official GitHub OAuth Apps docs confirm **up to 10 Authorization callback URLs** are supported per OAuth app (via **Add callback URL**), AND Neon Auth's callback URL is `{NEON_AUTH_BASE_URL}/callback/github` (the Neon branch auth host, not the app domain). Therefore, while local dev (`http://localhost:3000`) and production (`https://rezoooo-me.vercel.app`) share the **same Neon branch**, one GitHub OAuth App works for both and needs no client ID/secret in `.env`. If you create a **separate Neon dev branch** later (`DEV_NEON_AUTH_BASE_URL`), add its `{DEV_NEON_AUTH_BASE_URL}/callback/github` as a 2nd callback URL on the same GitHub app (untested across branches) or register a 2nd GitHub OAuth app and enter its Client ID/Secret on that Neon dev branch in Neon Console.
 
 ### Google Sign-in: Shared Dev Credentials & Switching to Your Own Client (Pre-Launch)
 - **Confirmed:** Google currently uses Neon's shared development credentials (`Shared credentials` badge in Neon Console; confirmed in `setup-oauth.md` & live `redirect_uri` pointing to Neon's shared regional proxy).
@@ -67,7 +90,7 @@
   1. Open [Google Cloud Console](https://console.cloud.google.com/) -> **Google Auth Platform / OAuth consent screen** (`console.cloud.google.com/auth/branding`): set App name `rezoooo.me`, support & developer emails, add Authorized domains (your app domain and Neon auth domain if prompted), **publish** out of *Testing* mode (and pass Google verification if required — otherwise external users are blocked).
   2. Create OAuth client (**Web application**):
      - **Authorized redirect URI:** `{NEON_AUTH_BASE_URL}/callback/google` (copy exact value from Neon Console for each branch you use).
-     - **Authorized JavaScript origins:** `https://rezoooome.vercel.app`, `http://localhost:3000` (for dev), and `{NEON_AUTH_BASE_URL}` origin if required by Google.
+     - **Authorized JavaScript origins:** `https://rezoooo-me.vercel.app`, `http://localhost:3000` (for dev), and `{NEON_AUTH_BASE_URL}` origin if required by Google.
   3. Copy Client ID + Client Secret into **Neon Console → project → branch → Settings → Auth → OAuth providers → Google → Configure → Update** (CLI: `neon neon-auth oauth-provider add --provider-id google ...`).
 
 ### Phase 2 Notes — Account Deletion (`DELETE /me`)
@@ -90,16 +113,16 @@
 ---
 
 ## 5. Deployment Domains & "When the Domain Changes" Checklist
-- **Rules:** Prod URL for now `https://rezoooome.vercel.app`; local dev `http://localhost:3000`; `rezoooo.me` wordmark/product name only; read all origins from env vars (never hard-code domains in code).
-- **Neon Auth Trusted Origins:** Set in **Console → Auth → Configuration → Domains** (`https://...`, no trailing slash; wildcards like `https://*.rezoooome.vercel.app` supported for previews). `http://localhost:3000` is allowed alongside prod by default via **Allow Localhost**; disable **Allow Localhost** on the prod branch before public launch.
+- **Rules:** Prod URL for now `https://rezoooo-me.vercel.app`; local dev `http://localhost:3000`; `rezoooo.me` wordmark/product name only; read all origins from env vars (never hard-code domains in code).
+- **Neon Auth Trusted Origins:** Set in **Console → Auth → Configuration → Domains** (`https://...`, no trailing slash; wildcards like `https://*.vercel.app` or preview aliases supported for previews). `http://localhost:3000` is allowed alongside prod by default via **Allow Localhost**; disable **Allow Localhost** on the prod branch before public launch.
 
 ### When the Domain Changes Checklist
 1. **Vercel domain setup:** Vercel Project → **Settings → Domains** -> add custom domain + configure DNS at registrar (e.g., GoDaddy). Note the `.vercel.app` alias keeps working unless disabled.
 2. **GitHub OAuth app:** Update **Homepage URL** to the new domain; **Authorization callback URL remains `{NEON_AUTH_BASE_URL}/callback/github`** unless you switch Neon branches.
 3. **Google OAuth client (if created):** Update **Authorized JavaScript origins** and **OAuth consent screen Authorized domains** (and re-verify if Google requires it); **Authorized redirect URI remains `{NEON_AUTH_BASE_URL}/callback/google`** unless you switch Neon branches.
 4. **Neon Auth trusted origins:** In **Console → Auth → Configuration → Domains**, add the new exact `https://...` origin (no trailing slash; add `www.` too if served); keep or remove `.vercel.app`; ensure **Allow Localhost** is off on the prod branch.
-5. **FastAPI CORS allowed web origin(s):** Update the backend `CORS_ORIGINS` env var on the API host to include the new exact origin(s).
-6. **Base-URL env vars on Vercel & API host:** Update any `NEXT_PUBLIC_APP_URL` / `APP_URL` / callback-base env vars defined in Phase 1 across Vercel and the FastAPI host (`exact var names TBD in Phase 1`).
+5. **FastAPI CORS allowed web origin(s):** Update `CORS_ALLOWED_ORIGINS` on the API host (comma-separated, no trailing slash) to include the new exact origin(s).
+6. **Base-URL env vars on Vercel & API host:** Update `NEXT_PUBLIC_API_URL` on Vercel if the API origin changed (no `NEXT_PUBLIC_APP_URL` is used by `/web`; `@neon/auth` infers request origin dynamically).
 7. **`NEON_AUTH_BASE_URL`:** Tied to the **Neon database branch**, NOT the frontend domain — **no change needed** on a Vercel custom domain change unless switching Neon branches (any custom-domain/CNAME feature for the Neon Auth host itself could not be confirmed).
 
 ---
